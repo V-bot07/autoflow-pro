@@ -162,11 +162,11 @@ function Home() {
       {testimonials && testimonials[0] && (
         <section className="py-32 px-6 bg-card">
           <div className="max-w-4xl mx-auto text-center">
-            <p className="font-display text-3xl md:text-5xl uppercase italic mb-8 leading-tight">
+            <p className="font-display text-3xl md:text-5xl uppercase italic mb-8 leading-tight text-center">
               "{testimonials[0].quote}"
             </p>
             <p className="text-primary text-[10px] font-bold uppercase tracking-[0.3em]">
-              {testimonials[0].name} — {testimonials[0].vehicle}
+              {testimonials[0].name}{testimonials[0].vehicle ? ` — ${testimonials[0].vehicle}` : ''}
             </p>
           </div>
         </section>
