@@ -1,6 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+// Stub component shared by placeholder routes.
+import { Link } from "@tanstack/react-router";
 
-function Stub({ title }: { title: string }) {
+export function Stub({ title }: { title: string }) {
   return (
     <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-6">
       <div className="text-center max-w-md">
@@ -12,10 +13,3 @@ function Stub({ title }: { title: string }) {
     </div>
   );
 }
-
-export const ServicesRoute = createFileRoute("/services")({ component: () => <Stub title="Services Catalog" /> });
-export const BookRoute = createFileRoute("/book")({ component: () => <Stub title="Book a Service" /> });
-export const TrackRoute = createFileRoute("/track")({ component: () => <Stub title="Track Your Repair" /> });
-export const AboutRoute = createFileRoute("/about")({ component: () => <Stub title="About the Clinic" /> });
-export const ContactRoute = createFileRoute("/contact")({ component: () => <Stub title="Contact" /> });
-export const AdminRoute = createFileRoute("/admin")({ component: () => <Stub title="Admin Panel" /> });
