@@ -1,7 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Gauge } from "lucide-react";
 
-const navItems = [
+type AppRoute = "/" | "/services" | "/track" | "/about" | "/contact" | "/book" | "/admin";
+
+const navItems: Array<{ to: AppRoute; label: string }> = [
   { to: "/services", label: "Services" },
   { to: "/track", label: "Track" },
   { to: "/about", label: "About" },
@@ -37,7 +39,7 @@ export function SiteHeader() {
   );
 }
 
-export function PageShell({ eyebrow, title, children, cta }: { eyebrow: string; title: string; children: React.ReactNode; cta?: { to: string; label: string } }) {
+export function PageShell({ eyebrow, title, children, cta }: { eyebrow: string; title: string; children: React.ReactNode; cta?: { to: AppRoute; label: string } }) {
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary selection:text-primary-foreground">
       <SiteHeader />
