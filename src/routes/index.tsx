@@ -8,7 +8,7 @@ const ICONS: Record<string, any> = { activity: Activity, cog: Cog, thermometer: 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Shubham Auto Clinic & Garage — Precision Motoring, Ahmedabad" },
+      { title: "Shubham Auto Clinic & Garage — Precision Motoring, Vadodara" },
       { name: "description", content: "Premium automotive workshop. Diagnostics, performance tuning, brakes, detailing, emergency service. Owned by master technician Malay Parikh." },
     ],
   }),
