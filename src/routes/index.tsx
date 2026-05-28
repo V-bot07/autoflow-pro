@@ -166,7 +166,7 @@ function Home() {
               "{testimonials[0].quote}"
             </p>
             <p className="text-primary text-[10px] font-bold uppercase tracking-[0.3em]">
-              {testimonials[0].name} — {testimonials[0].vehicle}
+              {testimonials[0].name}{testimonials[0].vehicle ? ` — ${testimonials[0].vehicle}` : ''}
             </p>
           </div>
         </section>
