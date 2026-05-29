@@ -1,0 +1,249 @@
+Error: Error transforming route file C:/Users/Asus/Downloads/mechanic/src/routes/admin.tsx: SyntaxError: Identifier 'invoiceNo' has already been declared. (422:10)
+    at file:///C:/Users/Asus/Downloads/mechanic/node_modules/@tanstack/router-generator/dist/esm/generator.js:143:13
+    at async generate (file:///C:/Users/Asus/Downloads/mechanic/node_modules/@tanstack/router-plugin/dist/esm/core/router-generator-plugin.js:39:4)
+    at async PluginContext.watchChange (file:///C:/Users/Asus/Downloads/mechanic/node_modules/@tanstack/router-plugin/dist/esm/core/router-generator-plugin.js:49:4)
+    at async Promise.all (index 2)
+    at async EnvironmentPluginContainer.hookParallel (file:///C:/Users/Asus/Downloads/mechanic/node_modules/vite/dist/node/chunks/config.js:28681:3)
+    at async EnvironmentPluginContainer.watchChange (file:///C:/Users/Asus/Downloads/mechanic/node_modules/vite/dist/node/chunks/config.js:28841:3)
+    at async Promise.all (index 0)
+    at async FSWatcher.<anonymous> (file:///C:/Users/Asus/Downloads/mechanic/node_modules/vite/dist/node/chunks/config.js:25598:3)
+[2m12:08:56 am[22m [31m[1m[vite][22m[39m [31mInternal server error: Identifier 'invoiceNo' has already been declared. (422:10)[39m
+  Plugin: [35mtanstack-router:code-splitter:compile-reference-file[39m
+  File: [36mC:/Users/Asus/Downloads/mechanic/src/routes/admin.tsx[39m:422:10
+[33m  420 |      }
+  421 |  
+  422 |      const invoiceNo = `INV-${row.data.booking_no}`;
+      |            ^
+  423 |      const nextPayment = { status: paid ? "paid" : "unpaid", total };
+  424 |  [39m
+      at constructor (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:365:19)
+      at TypeScriptParserMixin.raise (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:6616:19)
+      at TypeScriptScopeHandler.checkRedeclarationInScope (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:1619:19)
+      at TypeScriptScopeHandler.declareName (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:1585:12)
+      at TypeScriptScopeHandler.declareName (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:4892:11)
+      at TypeScriptParserMixin.declareNameFromIdentifier (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:7584:16)
+      at TypeScriptParserMixin.checkIdentifier (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:7580:12)
+      at TypeScriptParserMixin.checkLVal (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:7517:12)
+      at TypeScriptParserMixin.parseVarId (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:13429:10)
+      at TypeScriptParserMixin.parseVarId (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:9769:11)
+      at TypeScriptParserMixin.parseVar (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:13400:12)
+      at TypeScriptParserMixin.parseVarStatement (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:13247:10)
+      at TypeScriptParserMixin.parseVarStatement (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:9425:31)
+      at TypeScriptParserMixin.parseStatementContent (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12868:23)
+      at TypeScriptParserMixin.parseStatementContent (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:9525:18)
+      at TypeScriptParserMixin.parseStatementLike (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12784:17)
+      at TypeScriptParserMixin.parseStatementListItem (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12764:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:13333:61)
+      at TypeScriptParserMixin.parseBlockBody (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:13326:10)
+      at TypeScriptParserMixin.parseBlock (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:13314:10)
+      at TypeScriptParserMixin.parseFunctionBody (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12117:24)
+      at TypeScriptParserMixin.parseArrowExpression (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12092:10)
+      at TypeScriptParserMixin.parseAsyncArrowFromCallExpression (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:11281:10)
+      at TypeScriptParserMixin.parseAsyncArrowFromCallExpression (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:9783:18)
+      at TypeScriptParserMixin.parseCoverCallAndAsyncArrowHead (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:11211:27)
+      at TypeScriptParserMixin.parseSubscript (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:11137:19)
+      at TypeScriptParserMixin.parseSubscript (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:9289:18)
+      at TypeScriptParserMixin.parseSubscripts (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:11111:19)
+      at TypeScriptParserMixin.parseExprSubscripts (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:11102:17)
+      at TypeScriptParserMixin.parseUpdate (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:11083:21)
+      at TypeScriptParserMixin.parseMaybeUnary (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:11063:23)
+      at TypeScriptParserMixin.parseMaybeUnary (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:9854:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10916:61)
+      at TypeScriptParserMixin.parseExprOps (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10921:23)
+      at TypeScriptParserMixin.parseMaybeConditional (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10898:23)
+      at TypeScriptParserMixin.parseMaybeAssign (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10848:21)
+      at TypeScriptParserMixin.parseMaybeAssign (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:9803:20)
+      at C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10817:39
+      at TypeScriptParserMixin.allowInAnd (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12438:16)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10817:17)
+      at TypeScriptParserMixin.parseVar (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:13401:91)
+      at TypeScriptParserMixin.parseVarStatement (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:13247:10)
+      at TypeScriptParserMixin.parseVarStatement (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:9425:31)
+      at TypeScriptParserMixin.parseStatementContent (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12868:23)
+      at TypeScriptParserMixin.parseStatementContent (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:9525:18)
+      at TypeScriptParserMixin.parseStatementLike (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12784:17)
+      at TypeScriptParserMixin.parseStatementListItem (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12764:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:13333:61)
+      at TypeScriptParserMixin.parseBlockBody (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:13326:10)
+      at TypeScriptParserMixin.parseBlock (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:13314:10)
+[2m12:08:56 am[22m [31m[1m[vite][22m[39m [31mInternal server error: Identifier 'invoiceNo' has already been declared. (422:10)[39m
+  Plugin: [35mtanstack-router:code-splitter:compile-virtual-file[39m
+  File: [36mC:/Users/Asus/Downloads/mechanic/src/routes/admin.tsx?tsr-split=component[39m:422:10
+[33m  420 |      }
+  421 |  
+  422 |      const invoiceNo = `INV-${row.data.booking_no}`;
+      |            ^
+  423 |      const nextPayment = { status: paid ? "paid" : "unpaid", total };
+  424 |  [39m
+      at constructor (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:365:19)
+      at TypeScriptParserMixin.raise (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:6616:19)
+      at TypeScriptScopeHandler.checkRedeclarationInScope (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:1619:19)
+      at TypeScriptScopeHandler.declareName (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:1585:12)
+      at TypeScriptScopeHandler.declareName (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:4892:11)
+      at TypeScriptParserMixin.declareNameFromIdentifier (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:7584:16)
+      at TypeScriptParserMixin.checkIdentifier (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:7580:12)
+      at TypeScriptParserMixin.checkLVal (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:7517:12)
+      at TypeScriptParserMixin.parseVarId (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:13429:10)
+      at TypeScriptParserMixin.parseVarId (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:9769:11)
+      at TypeScriptParserMixin.parseVar (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:13400:12)
+      at TypeScriptParserMixin.parseVarStatement (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:13247:10)
+      at TypeScriptParserMixin.parseVarStatement (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:9425:31)
+      at TypeScriptParserMixin.parseStatementContent (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12868:23)
+      at TypeScriptParserMixin.parseStatementContent (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:9525:18)
+      at TypeScriptParserMixin.parseStatementLike (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12784:17)
+      at TypeScriptParserMixin.parseStatementListItem (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12764:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:13333:61)
+      at TypeScriptParserMixin.parseBlockBody (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:13326:10)
+      at TypeScriptParserMixin.parseBlock (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:13314:10)
+      at TypeScriptParserMixin.parseFunctionBody (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12117:24)
+      at TypeScriptParserMixin.parseArrowExpression (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12092:10)
+      at TypeScriptParserMixin.parseAsyncArrowFromCallExpression (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:11281:10)
+      at TypeScriptParserMixin.parseAsyncArrowFromCallExpression (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:9783:18)
+      at TypeScriptParserMixin.parseCoverCallAndAsyncArrowHead (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:11211:27)
+      at TypeScriptParserMixin.parseSubscript (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:11137:19)
+      at TypeScriptParserMixin.parseSubscript (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:9289:18)
+      at TypeScriptParserMixin.parseSubscripts (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:11111:19)
+      at TypeScriptParserMixin.parseExprSubscripts (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:11102:17)
+      at TypeScriptParserMixin.parseUpdate (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:11083:21)
+      at TypeScriptParserMixin.parseMaybeUnary (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:11063:23)
+      at TypeScriptParserMixin.parseMaybeUnary (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:9854:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10916:61)
+      at TypeScriptParserMixin.parseExprOps (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10921:23)
+      at TypeScriptParserMixin.parseMaybeConditional (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10898:23)
+      at TypeScriptParserMixin.parseMaybeAssign (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10848:21)
+      at TypeScriptParserMixin.parseMaybeAssign (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:9803:20)
+      at C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10817:39
+      at TypeScriptParserMixin.allowInAnd (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12438:16)
+      at TypeScriptParserMixin.parseMaybeAssignAllowIn (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10817:17)
+      at TypeScriptParserMixin.parseVar (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:13401:91)
+      at TypeScriptParserMixin.parseVarStatement (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:13247:10)
+      at TypeScriptParserMixin.parseVarStatement (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:9425:31)
+      at TypeScriptParserMixin.parseStatementContent (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12868:23)
+      at TypeScriptParserMixin.parseStatementContent (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:9525:18)
+      at TypeScriptParserMixin.parseStatementLike (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12784:17)
+      at TypeScriptParserMixin.parseStatementListItem (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12764:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:13333:61)
+      at TypeScriptParserMixin.parseBlockBody (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:13326:10)
+      at TypeScriptParserMixin.parseBlock (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:13314:10)
+Error: Error transforming route file C:/Users/Asus/Downloads/mechanic/src/routes/admin.tsx: SyntaxError: Unexpected token (509:6)
+    at file:///C:/Users/Asus/Downloads/mechanic/node_modules/@tanstack/router-generator/dist/esm/generator.js:143:13
+    at async generate (file:///C:/Users/Asus/Downloads/mechanic/node_modules/@tanstack/router-plugin/dist/esm/core/router-generator-plugin.js:39:4)
+    at async PluginContext.watchChange (file:///C:/Users/Asus/Downloads/mechanic/node_modules/@tanstack/router-plugin/dist/esm/core/router-generator-plugin.js:49:4)
+    at async Promise.all (index 2)
+    at async EnvironmentPluginContainer.hookParallel (file:///C:/Users/Asus/Downloads/mechanic/node_modules/vite/dist/node/chunks/config.js:28681:3)
+    at async EnvironmentPluginContainer.watchChange (file:///C:/Users/Asus/Downloads/mechanic/node_modules/vite/dist/node/chunks/config.js:28841:3)
+    at async Promise.all (index 0)
+    at async FSWatcher.<anonymous> (file:///C:/Users/Asus/Downloads/mechanic/node_modules/vite/dist/node/chunks/config.js:25598:3)
+[2m12:24:43 am[22m [31m[1m[vite][22m[39m [31mInternal server error: Unexpected token (509:6)[39m
+  Plugin: [35mtanstack-router:code-splitter:compile-reference-file[39m
+  File: [36mC:/Users/Asus/Downloads/mechanic/src/routes/admin.tsx[39m:509:6
+[33m  507 |      }
+  508 |    };
+  509 |      } else {
+      |        ^
+  510 |        toast.info("Invoice PDF downloaded. Customer phone number is missing.");
+  511 |      }[39m
+      at constructor (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:365:19)
+      at TypeScriptParserMixin.raise (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:6616:19)
+      at TypeScriptParserMixin.unexpected (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:6636:16)
+      at TypeScriptParserMixin.parseExprAtom (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:11459:22)
+      at TypeScriptParserMixin.parseExprAtom (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:4776:20)
+      at TypeScriptParserMixin.parseExprSubscripts (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:11098:23)
+      at TypeScriptParserMixin.parseUpdate (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:11083:21)
+      at TypeScriptParserMixin.parseMaybeUnary (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:11063:23)
+      at TypeScriptParserMixin.parseMaybeUnary (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:9854:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10916:61)
+      at TypeScriptParserMixin.parseExprOps (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10921:23)
+      at TypeScriptParserMixin.parseMaybeConditional (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10898:23)
+      at TypeScriptParserMixin.parseMaybeAssign (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10848:21)
+      at TypeScriptParserMixin.parseMaybeAssign (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:9803:20)
+      at TypeScriptParserMixin.parseExpressionBase (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10801:23)
+      at C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10797:39
+      at TypeScriptParserMixin.allowInAnd (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12438:16)
+      at TypeScriptParserMixin.parseExpression (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10797:17)
+      at TypeScriptParserMixin.parseStatementContent (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12912:23)
+      at TypeScriptParserMixin.parseStatementContent (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:9525:18)
+      at TypeScriptParserMixin.parseStatementLike (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12784:17)
+      at TypeScriptParserMixin.parseModuleItem (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12761:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:13333:36)
+      at TypeScriptParserMixin.parseBlockBody (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:13326:10)
+      at TypeScriptParserMixin.parseProgram (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12639:10)
+      at TypeScriptParserMixin.parseTopLevel (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12629:25)
+      at TypeScriptParserMixin.parse (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:14505:25)
+      at TypeScriptParserMixin.parse (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10143:18)
+      at parse (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:14539:38)
+      at parseAst (file:///C:/Users/Asus/Downloads/mechanic/node_modules/@tanstack/router-utils/dist/esm/ast.js:7:9)
+      at detectCodeSplitGroupingsFromRoute (file:///C:/Users/Asus/Downloads/mechanic/node_modules/@tanstack/router-plugin/dist/esm/core/code-splitter/compilers.js:580:14)
+      at handleCompilingReferenceFile (file:///C:/Users/Asus/Downloads/mechanic/node_modules/@tanstack/router-plugin/dist/esm/core/router-code-splitter-plugin.js:60:20)
+      at TransformPluginContext.handler (file:///C:/Users/Asus/Downloads/mechanic/node_modules/@tanstack/router-plugin/dist/esm/core/router-code-splitter-plugin.js:151:36)
+      at TransformPluginContext.<anonymous> (file:///C:/Users/Asus/Downloads/mechanic/node_modules/unplugin/dist/index.mjs:841:19)
+      at EnvironmentPluginContainer.transform (file:///C:/Users/Asus/Downloads/mechanic/node_modules/vite/dist/node/chunks/config.js:28817:51)
+      at async loadAndTransform (file:///C:/Users/Asus/Downloads/mechanic/node_modules/vite/dist/node/chunks/config.js:22686:26)
+      at async viteTransformMiddleware (file:///C:/Users/Asus/Downloads/mechanic/node_modules/vite/dist/node/chunks/config.js:24562:20)
+[2m12:24:43 am[22m [31m[1m[vite][22m[39m [31mInternal server error: Unexpected token (509:6)[39m
+  Plugin: [35mtanstack-router:code-splitter:compile-virtual-file[39m
+  File: [36mC:/Users/Asus/Downloads/mechanic/src/routes/admin.tsx?tsr-split=component[39m:509:6
+[33m  507 |      }
+  508 |    };
+  509 |      } else {
+      |        ^
+  510 |        toast.info("Invoice PDF downloaded. Customer phone number is missing.");
+  511 |      }[39m
+      at constructor (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:365:19)
+      at TypeScriptParserMixin.raise (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:6616:19)
+      at TypeScriptParserMixin.unexpected (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:6636:16)
+      at TypeScriptParserMixin.parseExprAtom (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:11459:22)
+      at TypeScriptParserMixin.parseExprAtom (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:4776:20)
+      at TypeScriptParserMixin.parseExprSubscripts (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:11098:23)
+      at TypeScriptParserMixin.parseUpdate (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:11083:21)
+      at TypeScriptParserMixin.parseMaybeUnary (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:11063:23)
+      at TypeScriptParserMixin.parseMaybeUnary (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:9854:18)
+      at TypeScriptParserMixin.parseMaybeUnaryOrPrivate (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10916:61)
+      at TypeScriptParserMixin.parseExprOps (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10921:23)
+      at TypeScriptParserMixin.parseMaybeConditional (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10898:23)
+      at TypeScriptParserMixin.parseMaybeAssign (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10848:21)
+      at TypeScriptParserMixin.parseMaybeAssign (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:9803:20)
+      at TypeScriptParserMixin.parseExpressionBase (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10801:23)
+      at C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10797:39
+      at TypeScriptParserMixin.allowInAnd (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12438:16)
+      at TypeScriptParserMixin.parseExpression (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10797:17)
+      at TypeScriptParserMixin.parseStatementContent (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12912:23)
+      at TypeScriptParserMixin.parseStatementContent (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:9525:18)
+      at TypeScriptParserMixin.parseStatementLike (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12784:17)
+      at TypeScriptParserMixin.parseModuleItem (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12761:17)
+      at TypeScriptParserMixin.parseBlockOrModuleBlockBody (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:13333:36)
+      at TypeScriptParserMixin.parseBlockBody (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:13326:10)
+      at TypeScriptParserMixin.parseProgram (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12639:10)
+      at TypeScriptParserMixin.parseTopLevel (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:12629:25)
+      at TypeScriptParserMixin.parse (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:14505:25)
+      at TypeScriptParserMixin.parse (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:10143:18)
+      at parse (C:\Users\Asus\Downloads\mechanic\node_modules\@babel\parser\lib\index.js:14539:38)
+      at parseAst (file:///C:/Users/Asus/Downloads/mechanic/node_modules/@tanstack/router-utils/dist/esm/ast.js:7:9)
+      at compileCodeSplitVirtualRoute (file:///C:/Users/Asus/Downloads/mechanic/node_modules/@tanstack/router-plugin/dist/esm/core/code-splitter/compilers.js:398:14)
+      at handleCompilingVirtualFile (file:///C:/Users/Asus/Downloads/mechanic/node_modules/@tanstack/router-plugin/dist/esm/core/router-code-splitter-plugin.js:124:18)
+      at TransformPluginContext.handler (file:///C:/Users/Asus/Downloads/mechanic/node_modules/@tanstack/router-plugin/dist/esm/core/router-code-splitter-plugin.js:190:13)
+      at TransformPluginContext.<anonymous> (file:///C:/Users/Asus/Downloads/mechanic/node_modules/unplugin/dist/index.mjs:841:19)
+      at EnvironmentPluginContainer.transform (file:///C:/Users/Asus/Downloads/mechanic/node_modules/vite/dist/node/chunks/config.js:28817:51)
+      at async loadAndTransform (file:///C:/Users/Asus/Downloads/mechanic/node_modules/vite/dist/node/chunks/config.js:22686:26)
+      at async viteTransformMiddleware (file:///C:/Users/Asus/Downloads/mechanic/node_modules/vite/dist/node/chunks/config.js:24562:20)
+TanStack Start server functions are not protected by the CSRF middleware.
+
+Server functions are same-origin RPC endpoints and should be protected from cross-site requests.
+
+Add the CSRF middleware in src/start.ts:
+
+  const csrfMiddleware = createCsrfMiddleware({
+    filter: (ctx) => ctx.handlerType === 'serverFn',
+  })
+
+  export const startInstance = createStart(() => ({
+    requestMiddleware: [csrfMiddleware],
+  }))
+
+If you intentionally handle CSRF another way, disable this warning:
+
+  tanstackStart({
+    serverFns: {
+      disableCsrfMiddlewareWarning: true,
+    },
+  })
