@@ -2,20 +2,82 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
+const PUBLIC_SUPABASE_ENV_NAMES = [
+  'VITE_SUPABASE_URL',
+  'VITE_SUPABASE_PUBLISHABLE_KEY',
+] as const;
+
+function getServerEnv(name: string) {
+  return typeof process !== 'undefined' ? process.env[name] : undefined;
+}
+
+function createDisabledSupabaseClient(message: string) {
+  const result = Promise.resolve({ data: null, error: new Error(message) });
+
+  const query = new Proxy(
+    {},
+    {
+      get() {
+        return () => query;
+      },
+    },
+  ) as any;
+
+  query.then = result.then.bind(result);
+  query.catch = result.catch.bind(result);
+  query.finally = result.finally.bind(result);
+
+  return new Proxy(
+    {},
+    {
+      get(_, prop) {
+        if (prop === 'auth') {
+          return {
+            getSession: async () => ({ data: { session: null }, error: new Error(message) }),
+            onAuthStateChange: () => ({
+              data: { subscription: { unsubscribe: () => undefined } },
+            }),
+          };
+        }
+
+        if (prop === 'from' || prop === 'rpc' || prop === 'storage') {
+          return () => query;
+        }
+
+        return undefined;
+      },
+    },
+  ) as ReturnType<typeof createClient<Database>>;
+}
+
 function createSupabaseClient() {
-  // Use import.meta.env for client-side (Vite build-time replacement)
-  // Fall back to process.env for SSR (server-side rendering)
-  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-  const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
+  // Use import.meta.env for the browser bundle. Fall back to process.env only
+  // during SSR, where Vercel runtime variables are available per request.
+  const SUPABASE_URL =
+    import.meta.env.VITE_SUPABASE_URL ||
+    getServerEnv('VITE_SUPABASE_URL') ||
+    getServerEnv('SUPABASE_URL');
+  const SUPABASE_PUBLISHABLE_KEY =
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+    getServerEnv('VITE_SUPABASE_PUBLISHABLE_KEY') ||
+    getServerEnv('SUPABASE_PUBLISHABLE_KEY');
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     const missing = [
-      ...(!SUPABASE_URL ? ['SUPABASE_URL'] : []),
-      ...(!SUPABASE_PUBLISHABLE_KEY ? ['SUPABASE_PUBLISHABLE_KEY'] : []),
+      ...(!SUPABASE_URL ? ['VITE_SUPABASE_URL or SUPABASE_URL'] : []),
+      ...(!SUPABASE_PUBLISHABLE_KEY ? ['VITE_SUPABASE_PUBLISHABLE_KEY or SUPABASE_PUBLISHABLE_KEY'] : []),
     ];
-    const message = `Missing Supabase environment variable(s): ${missing.join(', ')}. Connect Supabase in Lovable Cloud.`;
-    console.error(`[Supabase] ${message}`);
-    throw new Error(message);
+    const message = `Missing Supabase environment variable(s): ${missing.join(', ')}. Add ${PUBLIC_SUPABASE_ENV_NAMES.join(', ')} to Vercel for the client build and runtime.`;
+    console.error('[Supabase] Client config error', {
+      missing,
+      hasViteUrl: Boolean(import.meta.env.VITE_SUPABASE_URL),
+      hasVitePublishableKey: Boolean(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY),
+      hasRuntimeUrl: Boolean(getServerEnv('VITE_SUPABASE_URL') || getServerEnv('SUPABASE_URL')),
+      hasRuntimePublishableKey: Boolean(
+        getServerEnv('VITE_SUPABASE_PUBLISHABLE_KEY') || getServerEnv('SUPABASE_PUBLISHABLE_KEY'),
+      ),
+    });
+    return createDisabledSupabaseClient(message);
   }
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {

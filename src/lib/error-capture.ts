@@ -6,6 +6,7 @@ const TTL_MS = 5_000;
 
 function record(error: unknown) {
   lastCapturedError = { error, at: Date.now() };
+  console.error("SSR ERROR:", error);
 }
 
 if (typeof globalThis.addEventListener === "function") {
@@ -13,6 +14,11 @@ if (typeof globalThis.addEventListener === "function") {
   globalThis.addEventListener("unhandledrejection", (event) =>
     record((event as PromiseRejectionEvent).reason),
   );
+}
+
+if (typeof process !== "undefined" && typeof process.on === "function") {
+  process.on("uncaughtException", record);
+  process.on("unhandledRejection", record);
 }
 
 export function consumeLastCapturedError(): unknown {

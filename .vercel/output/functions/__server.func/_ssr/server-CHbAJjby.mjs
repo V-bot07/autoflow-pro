@@ -81,7 +81,7 @@ function getResponse() {
 }
 var HEADERS = { TSS_SHELL: "X-TSS_SHELL" };
 async function getStartManifest(matchedRoutes) {
-  const { tsrStartManifest } = await import("../_tanstack-start-manifest_v-F0MJgkgW.mjs");
+  const { tsrStartManifest } = await import("../_tanstack-start-manifest_v-CDjBU9ab.mjs");
   const startManifest = tsrStartManifest();
   let routes = startManifest.routes;
   routes[rootRouteId];
@@ -106,7 +106,7 @@ async function getStartManifest(matchedRoutes) {
 const manifest = {
   "15c063ea822cba8d4660da48eea48425d7b15e3f8912e7a5fcd13b794115b3cf": {
     functionName: "sendWhatsAppInvoicePdf_createServerFn_handler",
-    importer: () => import("./whatsapp.functions-BffR6dKi.mjs")
+    importer: () => import("./whatsapp.functions-Bqj7yLnC.mjs")
   }
 };
 async function getServerFnById(id, access) {
@@ -1367,8 +1367,8 @@ var getBaseManifest = getProdBaseManifest;
 var createEarlyHintsForRequest = createEarlyHintsCollector;
 async function loadEntries() {
   const [routerEntry, startEntry, pluginAdapters] = await Promise.all([
-    import("./router-ClvjQ9gm.mjs"),
-    import("./start-BME3RfnA.mjs"),
+    import("./router-CiiRZoP6.mjs"),
+    import("./start-CaEkEkb0.mjs"),
     import("./empty-plugin-adapters-BFgPZ6_d.mjs")
   ]);
   return {

@@ -91,6 +91,9 @@ const Route$7 = createRootRouteWithContext()({
       { property: "og:type", content: "website" }
     ],
     links: [
+      { rel: "icon", href: "/favicon.ico", sizes: "any" },
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+      { rel: "apple-touch-icon", href: "/favicon.png" },
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
@@ -197,7 +200,7 @@ const Route$3 = createFileRoute("/book")({
   }),
   component: lazyRouteComponent($$splitComponentImporter$3, "component")
 });
-const $$splitComponentImporter$2 = () => import("./admin-L6TQV3l4.mjs");
+const $$splitComponentImporter$2 = () => import("./admin-BYr8_p6r.mjs");
 const Route$2 = createFileRoute("/admin")({
   head: () => ({
     meta: [{
