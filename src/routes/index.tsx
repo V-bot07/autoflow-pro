@@ -55,7 +55,6 @@ function Home() {
             <Link to="/about" className="hover:text-primary transition-colors">About</Link>
             <Link to="/contact" className="hover:text-primary transition-colors">Contact</Link>
             <Link to="/book" className="px-6 py-2.5 bg-primary text-primary-foreground hover:bg-white transition-colors">Book Service</Link>
-            <Link to="/admin" className="text-muted-foreground hover:text-primary">Admin</Link>
           </div>
         </div>
       </nav>
@@ -209,6 +208,7 @@ function Home() {
               <Link to="/about" className="hover:text-primary">Workshop</Link>
               <Link to="/services" className="hover:text-primary">Protocols</Link>
               <Link to="/contact" className="hover:text-primary">Contact</Link>
+              <Link to="/admin" className="text-muted-foreground hover:text-primary hover:underline transition-all border border-muted-foreground/30 px-2 py-0.5 rounded">Go to Admin</Link>
             </div>
           </div>
         </div>

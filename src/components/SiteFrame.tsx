@@ -32,7 +32,6 @@ export function SiteHeader() {
           <Link to="/book" className="bg-primary px-6 py-2.5 text-primary-foreground hover:bg-foreground">
             Book Service
           </Link>
-          <Link to="/admin" className="text-muted-foreground hover:text-primary">Admin</Link>
         </div>
       </div>
     </nav>
