@@ -1281,11 +1281,10 @@ const syncMatchContext = (inner, matchId, index) => {
     };
   });
 };
-const handleSerialError = (inner, index, err, routerCode) => {
+const handleSerialError = (inner, index, err) => {
   const { id: matchId, routeId } = inner.matches[index];
   const route = inner.router.looseRoutesById[routeId];
   if (err instanceof Promise) throw err;
-  err.routerCode = routerCode;
   inner.firstBadMatchIndex ??= index;
   handleRedirectAndNotFound(inner, inner.router.getMatch(matchId), err);
   try {
@@ -1385,8 +1384,8 @@ const executeBeforeLoad = (inner, matchId, index, route) => {
     prevLoadPromise = void 0;
   });
   const { paramsError, searchError } = match;
-  if (paramsError) handleSerialError(inner, index, paramsError, "PARSE_PARAMS");
-  if (searchError) handleSerialError(inner, index, searchError, "VALIDATE_SEARCH");
+  if (paramsError) handleSerialError(inner, index, paramsError);
+  if (searchError) handleSerialError(inner, index, searchError);
   setupPendingTimeout(inner, matchId, route, match);
   const abortController = new AbortController();
   let isPending = false;
@@ -1449,7 +1448,7 @@ const executeBeforeLoad = (inner, matchId, index, route) => {
     }
     if (isRedirect(beforeLoadContext2) || isNotFound(beforeLoadContext2)) {
       pending();
-      handleSerialError(inner, index, beforeLoadContext2, "BEFORE_LOAD");
+      handleSerialError(inner, index, beforeLoadContext2);
     }
     inner.router.batch(() => {
       pending();
@@ -1466,12 +1465,12 @@ const executeBeforeLoad = (inner, matchId, index, route) => {
     if (isPromise(beforeLoadContext)) {
       pending();
       return beforeLoadContext.catch((err) => {
-        handleSerialError(inner, index, err, "BEFORE_LOAD");
+        handleSerialError(inner, index, err);
       }).then(updateContext);
     }
   } catch (err) {
     pending();
-    handleSerialError(inner, index, err, "BEFORE_LOAD");
+    handleSerialError(inner, index, err);
   }
   updateContext(beforeLoadContext);
 };
@@ -3607,38 +3606,42 @@ function dehydrateMatch(match) {
 }
 const INITIAL_SCRIPTS = [dn(SCOPE_ID), tsrScript_default];
 var ScriptBuffer = class {
-  constructor(router) {
+  constructor(injectScript) {
     this._scriptBarrierLifted = false;
     this._cleanedUp = false;
-    this._pendingMicrotask = false;
-    this.router = router;
+    this._microtaskVersion = 0;
+    this._pendingMicrotaskVersion = 0;
+    this.injectScript = injectScript;
     this._queue = INITIAL_SCRIPTS.slice();
   }
   enqueue(script) {
     if (this._cleanedUp) return;
     this._queue.push(script);
-    if (this._scriptBarrierLifted && !this._pendingMicrotask) {
-      this._pendingMicrotask = true;
-      queueMicrotask(() => {
-        this._pendingMicrotask = false;
-        this.injectBufferedScripts();
-      });
-    }
+    if (this._scriptBarrierLifted) this.scheduleInjectBufferedScripts();
   }
   liftBarrier() {
     if (this._scriptBarrierLifted || this._cleanedUp) return;
     this._scriptBarrierLifted = true;
-    if (this._queue.length > 0 && !this._pendingMicrotask) {
-      this._pendingMicrotask = true;
-      queueMicrotask(() => {
-        this._pendingMicrotask = false;
-        this.injectBufferedScripts();
-      });
-    }
+    if (this._queue.length > 0) this.scheduleInjectBufferedScripts();
+  }
+  scheduleInjectBufferedScripts() {
+    if (this._pendingMicrotaskVersion !== 0) return;
+    const pendingVersion = ++this._microtaskVersion;
+    this._pendingMicrotaskVersion = pendingVersion;
+    queueMicrotask(() => {
+      if (this._pendingMicrotaskVersion !== pendingVersion) return;
+      this._pendingMicrotaskVersion = 0;
+      this.injectBufferedScripts();
+    });
+  }
+  clearPendingMicrotask() {
+    if (this._pendingMicrotaskVersion === 0) return;
+    this._pendingMicrotaskVersion = 0;
+    this._microtaskVersion++;
   }
   /**
   * Flushes any pending scripts synchronously.
-  * Call this before emitting onSerializationFinished to ensure all scripts are injected.
+  * Call this before signaling serialization finished to ensure all scripts are injected.
   *
   * IMPORTANT: Only injects if the barrier has been lifted. Before the barrier is lifted,
   * scripts should remain in the queue so takeBufferedScripts() can retrieve them
@@ -3646,27 +3649,33 @@ var ScriptBuffer = class {
   flush() {
     if (!this._scriptBarrierLifted) return;
     if (this._cleanedUp) return;
-    this._pendingMicrotask = false;
-    const scriptsToInject = this.takeAll();
-    if (scriptsToInject && this.router?.serverSsr) this.router.serverSsr.injectScript(scriptsToInject);
+    this.clearPendingMicrotask();
+    this.injectBufferedScripts();
   }
   takeAll() {
-    const bufferedScripts = this._queue;
-    this._queue = [];
+    return this.takeScripts(this._queue.length);
+  }
+  takeScripts(count) {
+    if (count <= 0) return void 0;
+    const bufferedScripts = this._queue.splice(0, count);
     if (bufferedScripts.length === 0) return;
     if (bufferedScripts.length === 1) return bufferedScripts[0] + ";document.currentScript.remove()";
     return bufferedScripts.join(";") + ";document.currentScript.remove()";
+  }
+  hasPending() {
+    return this._queue.length > 0;
   }
   injectBufferedScripts() {
     if (this._cleanedUp) return;
     if (this._queue.length === 0) return;
     const scriptsToInject = this.takeAll();
-    if (scriptsToInject && this.router?.serverSsr) this.router.serverSsr.injectScript(scriptsToInject);
+    if (scriptsToInject) this.injectScript?.(scriptsToInject);
   }
   cleanup() {
     this._cleanedUp = true;
+    this.clearPendingMicrotask();
     this._queue = [];
-    this.router = void 0;
+    this.injectScript = void 0;
   }
 };
 const MANIFEST_CACHE_SIZE = 100;
@@ -3818,20 +3827,38 @@ function attachRouterServerSsrUtils({ router, manifest, getRequestAssets }) {
   } };
   let _dehydrated = false;
   let _serializationFinished = false;
+  let streamFastPathReserved = false;
   const renderFinishedListeners = [];
+  const injectedHtmlListeners = [];
   const serializationFinishedListeners = [];
-  const scriptBuffer = new ScriptBuffer(router);
+  const cleanupListeners = [];
+  let cleanupStarted = false;
   let injectedHtmlBuffer = "";
-  router.serverSsr = {
+  const callListeners = (listeners, errorPrefix) => {
+    const snapshot = listeners.slice();
+    for (const l of snapshot) try {
+      l();
+    } catch (err) {
+      console.error(`${errorPrefix}:`, err);
+    }
+  };
+  const removeListener = (listeners, listener) => {
+    const index = listeners.indexOf(listener);
+    if (index >= 0) listeners.splice(index, 1);
+  };
+  const scriptBuffer = new ScriptBuffer((script) => {
+    serverSsr.injectScript(script);
+  });
+  const serverSsr = {
     injectHtml: (html) => {
-      if (!html) return;
+      if (!html || cleanupStarted) return;
       injectedHtmlBuffer += html;
-      router.emit({ type: "onInjectedHtml" });
+      callListeners(injectedHtmlListeners, "SSR injected HTML listener error");
     },
     injectScript: (script) => {
-      if (!script) return;
+      if (!script || cleanupStarted) return;
       const html = `<script${router.options.ssr?.nonce ? ` nonce='${router.options.ssr.nonce}'` : ""}>${script}<\/script>`;
-      router.serverSsr.injectHtml(html);
+      serverSsr.injectHtml(html);
     },
     dehydrate: async (opts) => {
       if (_dehydrated) {
@@ -3870,17 +3897,24 @@ function attachRouterServerSsrUtils({ router, manifest, getRequestAssets }) {
       const trackPlugins = { didRun: false };
       const serializationAdapters = router.options.serializationAdapters;
       const plugins = serializationAdapters ? serializationAdapters.map((t) => /* @__PURE__ */ makeSsrSerovalPlugin(t, trackPlugins)).concat(defaultSerovalPlugins) : defaultSerovalPlugins;
+      let serializationCompleteSignaled = false;
       const signalSerializationComplete = () => {
+        if (serializationCompleteSignaled || cleanupStarted) return;
+        serializationCompleteSignaled = true;
         _serializationFinished = true;
-        try {
-          serializationFinishedListeners.forEach((l) => l());
-          router.emit({ type: "onSerializationFinished" });
+        const listeners = serializationFinishedListeners.slice();
+        serializationFinishedListeners.length = 0;
+        for (const l of listeners) try {
+          l();
         } catch (err) {
           console.error("Serialization listener error:", err);
-        } finally {
-          serializationFinishedListeners.length = 0;
-          renderFinishedListeners.length = 0;
         }
+      };
+      const finishScriptSerialization = () => {
+        if (serializationCompleteSignaled || cleanupStarted) return;
+        scriptBuffer.enqueue(GLOBAL_TSR + ".e()");
+        scriptBuffer.flush();
+        signalSerializationComplete();
       };
       Sn(dehydratedRouter, {
         refs: /* @__PURE__ */ new Map(),
@@ -3893,13 +3927,11 @@ function attachRouterServerSsrUtils({ router, manifest, getRequestAssets }) {
         onError: (err) => {
           console.error("Serialization error:", err);
           if (err && err.stack) console.error(err.stack);
-          signalSerializationComplete();
+          finishScriptSerialization();
         },
         scopeId: SCOPE_ID,
         onDone: () => {
-          scriptBuffer.enqueue(GLOBAL_TSR + ".e()");
-          scriptBuffer.flush();
-          signalSerializationComplete();
+          finishScriptSerialization();
         }
       });
     },
@@ -3909,20 +3941,57 @@ function attachRouterServerSsrUtils({ router, manifest, getRequestAssets }) {
     isSerializationFinished() {
       return _serializationFinished;
     },
-    onRenderFinished: (listener) => renderFinishedListeners.push(listener),
-    onSerializationFinished: (listener) => serializationFinishedListeners.push(listener),
+    reserveStreamFastPath() {
+      if (!cleanupStarted && _serializationFinished && !streamFastPathReserved && renderFinishedListeners.length === 0 && !injectedHtmlBuffer && !scriptBuffer.hasPending()) {
+        streamFastPathReserved = true;
+        return true;
+      }
+      return false;
+    },
+    onInjectedHtml: (listener) => {
+      if (cleanupStarted) return () => {
+      };
+      injectedHtmlListeners.push(listener);
+      return () => removeListener(injectedHtmlListeners, listener);
+    },
+    onRenderFinished: (listener) => {
+      if (cleanupStarted || streamFastPathReserved) return;
+      renderFinishedListeners.push(listener);
+    },
+    onSerializationFinished: (listener) => {
+      if (cleanupStarted) return () => {
+      };
+      if (_serializationFinished && !cleanupStarted) {
+        try {
+          listener();
+        } catch (err) {
+          console.error("Serialization listener error:", err);
+        }
+        return () => {
+        };
+      }
+      serializationFinishedListeners.push(listener);
+      return () => removeListener(serializationFinishedListeners, listener);
+    },
+    onCleanup: (listener) => {
+      if (cleanupStarted) return;
+      cleanupListeners.push(listener);
+    },
     setRenderFinished: () => {
-      try {
-        renderFinishedListeners.forEach((l) => l());
+      if (cleanupStarted) return;
+      scriptBuffer.liftBarrier();
+      const listeners = renderFinishedListeners.slice();
+      renderFinishedListeners.length = 0;
+      for (const l of listeners) try {
+        l();
       } catch (err) {
         console.error("Error in render finished listener:", err);
-      } finally {
-        renderFinishedListeners.length = 0;
       }
-      scriptBuffer.liftBarrier();
+      if (_serializationFinished) scriptBuffer.flush();
     },
     takeBufferedScripts() {
       const scripts = scriptBuffer.takeAll();
+      if (!scripts) return void 0;
       return {
         tag: "script",
         attrs: {
@@ -3943,14 +4012,29 @@ function attachRouterServerSsrUtils({ router, manifest, getRequestAssets }) {
       return buffered;
     },
     cleanup() {
-      if (!router.serverSsr) return;
+      if (cleanupStarted) return;
+      cleanupStarted = true;
+      const listeners = cleanupListeners.slice();
+      cleanupListeners.length = 0;
+      for (const l of listeners) try {
+        l();
+      } catch (err) {
+        console.error("Error in SSR cleanup listener:", err);
+      }
       renderFinishedListeners.length = 0;
+      injectedHtmlListeners.length = 0;
       serializationFinishedListeners.length = 0;
       injectedHtmlBuffer = "";
       scriptBuffer.cleanup();
       router.serverSsr = void 0;
     }
   };
+  router.serverSsr = serverSsr;
+  for (const listener of router.serverSsrLifecycle?.onServerSsrAttach ?? []) try {
+    listener(serverSsr);
+  } catch (err) {
+    console.error("SSR attach listener error:", err);
+  }
 }
 function getOrigin(request) {
   try {
@@ -3970,163 +4054,349 @@ function getNormalizedURL(url, base) {
     handledProtocolRelativeURL
   };
 }
+function isSsrResponse(value) {
+  return typeof value === "object" && value !== null && "response" in value && "serverSsrCleanup" in value;
+}
+function normalizeSsrResponse(result) {
+  return isSsrResponse(result) ? result : {
+    response: result,
+    serverSsrCleanup: "none"
+  };
+}
+function createSsrStreamResponse(router, response) {
+  if (!response.body) throw new Error("Invariant failed: SSR stream response requires a body");
+  let disposed = false;
+  return {
+    response,
+    serverSsrCleanup: "stream",
+    async dispose(reason) {
+      if (disposed) return;
+      disposed = true;
+      try {
+        await response.body.cancel(reason);
+      } catch {
+      }
+      router.serverSsr?.cleanup();
+    }
+  };
+}
+async function replaceSsrResponse(result, response, reason) {
+  const ssrResponse = normalizeSsrResponse(result);
+  if (ssrResponse.serverSsrCleanup === "stream") await ssrResponse.dispose(reason);
+  return {
+    response,
+    serverSsrCleanup: "none"
+  };
+}
+async function stripSsrResponseBody(result, reason) {
+  const ssrResponse = normalizeSsrResponse(result);
+  if (ssrResponse.serverSsrCleanup === "stream") await ssrResponse.dispose(reason);
+  return {
+    response: new Response(null, ssrResponse.response),
+    serverSsrCleanup: "none"
+  };
+}
 function defineHandlerCallback(handler) {
   return handler;
 }
-function transformReadableStreamWithRouter(router, routerStream) {
-  return transformStreamWithRouter(router, routerStream);
+function transformReadableStreamWithRouter(router, routerStream, opts) {
+  return transformStreamWithRouter(router, routerStream, opts);
 }
-function transformPipeableStreamWithRouter(router, routerStream) {
-  return Readable.fromWeb(transformStreamWithRouter(router, Readable.toWeb(routerStream)));
+function transformPipeableStreamWithRouter(router, routerStream, opts) {
+  return Readable.fromWeb(transformStreamWithRouter(router, Readable.toWeb(routerStream), opts));
 }
-const BODY_END_TAG = "</body>";
-const HTML_END_TAG = "</html>";
 const MIN_CLOSING_TAG_LENGTH = 4;
 const DEFAULT_SERIALIZATION_TIMEOUT_MS = 6e4;
-const DEFAULT_LIFETIME_TIMEOUT_MS = 6e4;
+const DEFAULT_LIFETIME_TIMEOUT_MS = DEFAULT_SERIALIZATION_TIMEOUT_MS * 2;
+const MAX_LEFTOVER_CHARS = 2048;
+const MAX_TAIL_CHARS = 64 * 1024;
+const MAX_ROUTER_HTML_CHARS = 16 * 1024 * 1024;
+const MAX_PENDING_WRITE_CHARS = 16 * 1024 * 1024;
+const MergeState = {
+  ReadingBody: 0,
+  HoldingTail: 1,
+  AppDone: 2,
+  Draining: 3,
+  Done: 4
+};
 const textEncoder = new TextEncoder();
-function findLastClosingTagEnd(str) {
-  const len = str.length;
-  if (len < MIN_CLOSING_TAG_LENGTH) return -1;
-  let i = len - 1;
-  while (i >= MIN_CLOSING_TAG_LENGTH - 1) {
-    if (str.charCodeAt(i) === 62) {
-      let j = i - 1;
-      while (j >= 1) {
-        const code = str.charCodeAt(j);
-        if (code >= 97 && code <= 122 || code >= 65 && code <= 90 || code >= 48 && code <= 57 || code === 95 || code === 58 || code === 46 || code === 45) j--;
-        else break;
-      }
-      const tagNameStart = j + 1;
-      if (tagNameStart < i) {
-        const startCode = str.charCodeAt(tagNameStart);
-        if (startCode >= 97 && startCode <= 122 || startCode >= 65 && startCode <= 90) {
-          if (j >= 1 && str.charCodeAt(j) === 47 && str.charCodeAt(j - 1) === 60) return i + 1;
+const noop = () => {
+};
+const resolvedPromise = Promise.resolve();
+function findHtmlBoundary(str) {
+  let lastClosingTagEnd = -1;
+  let searchFrom = str.length - MIN_CLOSING_TAG_LENGTH;
+  while (searchFrom >= 0) {
+    const openSlash = str.lastIndexOf("</", searchFrom);
+    if (openSlash === -1) break;
+    if ((str.charCodeAt(openSlash + 2) | 32) === 98 && (str.charCodeAt(openSlash + 3) | 32) === 111 && (str.charCodeAt(openSlash + 4) | 32) === 100 && (str.charCodeAt(openSlash + 5) | 32) === 121 && str.charCodeAt(openSlash + 6) === 62) return -openSlash - 2;
+    if (lastClosingTagEnd === -1) {
+      let i = openSlash + 2;
+      const startCode = str.charCodeAt(i);
+      if (startCode >= 97 && startCode <= 122 || startCode >= 65 && startCode <= 90) {
+        i++;
+        while (i < str.length) {
+          const code = str.charCodeAt(i);
+          if (code >= 97 && code <= 122 || code >= 65 && code <= 90 || code >= 48 && code <= 57 || code === 95 || code === 58 || code === 46 || code === 45) i++;
+          else break;
         }
+        if (str.charCodeAt(i) === 62) lastClosingTagEnd = i + 1;
       }
     }
-    i--;
+    searchFrom = openSlash - 1;
   }
-  return -1;
+  return lastClosingTagEnd;
+}
+function safeReleaseReader(reader) {
+  try {
+    reader.releaseLock();
+    return true;
+  } catch {
+    return false;
+  }
+}
+function safeCancelReader(reader, reason) {
+  let cancelPromise;
+  try {
+    cancelPromise = reader.cancel(reason);
+  } catch {
+  }
+  if (!safeReleaseReader(reader) && cancelPromise) return cancelPromise.then(noop, noop).then(() => {
+    safeReleaseReader(reader);
+  });
+  return cancelPromise ? cancelPromise.then(noop, noop) : resolvedPromise;
+}
+function createReaderState(appStream) {
+  const reader = appStream.getReader();
+  let released = false;
+  return {
+    reader,
+    cancel: (reason) => {
+      if (released) return resolvedPromise;
+      released = true;
+      return safeCancelReader(reader, reason);
+    },
+    release: () => {
+      if (released) return;
+      released = true;
+      safeReleaseReader(reader);
+    }
+  };
+}
+function createAbortNotifier(opts) {
+  let abortNotified = false;
+  return (reason) => {
+    if (abortNotified) return;
+    abortNotified = true;
+    try {
+      opts?.onAbort?.(reason);
+    } catch {
+    }
+  };
 }
 function transformStreamWithRouter(router, appStream, opts) {
-  const serializationAlreadyFinished = router.serverSsr?.isSerializationFinished() ?? false;
-  const initialBufferedHtml = router.serverSsr?.takeBufferedHtml();
-  if (serializationAlreadyFinished && !initialBufferedHtml) {
-    let cleanedUp2 = false;
-    let controller2;
-    let isStreamClosed2 = false;
-    let lifetimeTimeoutHandle2;
-    const cleanup2 = () => {
-      if (cleanedUp2) return;
-      cleanedUp2 = true;
-      if (lifetimeTimeoutHandle2 !== void 0) {
-        clearTimeout(lifetimeTimeoutHandle2);
-        lifetimeTimeoutHandle2 = void 0;
-      }
-      router.serverSsr?.cleanup();
-    };
-    const safeClose2 = () => {
-      if (isStreamClosed2) return;
-      isStreamClosed2 = true;
+  const serverSsr = router.serverSsr;
+  if (!serverSsr) throw new Error("Invariant failed: router.serverSsr is required");
+  if (serverSsr.reserveStreamFastPath()) return makeFastPathStream(appStream, opts, serverSsr);
+  return makeMainStream(serverSsr, appStream, opts);
+}
+function makeFastPathStream(appStream, opts, serverSsr) {
+  let cleanedUp = false;
+  let controller;
+  let state = MergeState.ReadingBody;
+  let lifetimeTimeoutHandle;
+  let stopListeningToInjectedHtml;
+  const readerState = createReaderState(appStream);
+  const notifyAbort = createAbortNotifier(opts);
+  const isDone = () => state === MergeState.Done;
+  let renderFinished = false;
+  const finishSsrRendering = () => {
+    if (!serverSsr || renderFinished) return true;
+    renderFinished = true;
+    try {
+      serverSsr.setRenderFinished();
+      return true;
+    } catch (error) {
+      safeError(error);
+      cleanup(error);
+      return false;
+    }
+  };
+  const cleanup = (reason, cancelReader = true) => {
+    if (cleanedUp) return resolvedPromise;
+    cleanedUp = true;
+    if (lifetimeTimeoutHandle !== void 0) {
+      clearTimeout(lifetimeTimeoutHandle);
+      lifetimeTimeoutHandle = void 0;
+    }
+    try {
+      stopListeningToInjectedHtml?.();
+    } catch {
+    }
+    stopListeningToInjectedHtml = void 0;
+    if (cancelReader) notifyAbort(reason);
+    const readerDone = cancelReader ? readerState.cancel(reason) : (readerState.release(), resolvedPromise);
+    if (serverSsr) try {
+      serverSsr.cleanup();
+    } catch (error) {
+      console.error("Error in SSR cleanup:", error);
+    }
+    return readerDone;
+  };
+  const safeClose = () => {
+    if (isDone()) return;
+    state = MergeState.Done;
+    try {
+      controller?.close();
+    } catch {
+    }
+  };
+  const safeError = (error) => {
+    if (isDone()) return;
+    state = MergeState.Done;
+    try {
+      controller?.error(error);
+    } catch {
+    }
+  };
+  if (serverSsr) stopListeningToInjectedHtml = serverSsr.onInjectedHtml(() => {
+    const err = /* @__PURE__ */ new Error("SSR router HTML injected during fast path");
+    safeError(err);
+    cleanup(err);
+  });
+  const lifetimeMs = opts?.lifetimeMs ?? DEFAULT_LIFETIME_TIMEOUT_MS;
+  lifetimeTimeoutHandle = setTimeout(() => {
+    if (!cleanedUp && !isDone()) {
+      const err = /* @__PURE__ */ new Error("Stream lifetime exceeded");
+      console.warn(`SSR stream transform exceeded maximum lifetime (${lifetimeMs}ms), forcing cleanup`);
+      safeError(err);
+      cleanup(err);
+    }
+  }, lifetimeMs);
+  return new ReadableStream$1({
+    start(c) {
+      controller = c;
+    },
+    async pull(c) {
+      if (cleanedUp || isDone()) return;
       try {
-        controller2?.close();
-      } catch {
-      }
-    };
-    const safeError2 = (error) => {
-      if (isStreamClosed2) return;
-      isStreamClosed2 = true;
-      try {
-        controller2?.error(error);
-      } catch {
-      }
-    };
-    const lifetimeMs2 = DEFAULT_LIFETIME_TIMEOUT_MS;
-    lifetimeTimeoutHandle2 = setTimeout(() => {
-      if (!cleanedUp2 && !isStreamClosed2) {
-        console.warn(`SSR stream transform exceeded maximum lifetime (${lifetimeMs2}ms), forcing cleanup`);
-        safeError2(/* @__PURE__ */ new Error("Stream lifetime exceeded"));
-        cleanup2();
-      }
-    }, lifetimeMs2);
-    const stream2 = new ReadableStream$1({
-      start(c) {
-        controller2 = c;
-      },
-      cancel() {
-        isStreamClosed2 = true;
-        cleanup2();
-      }
-    });
-    (async () => {
-      const reader = appStream.getReader();
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          if (cleanedUp2 || isStreamClosed2) return;
-          controller2?.enqueue(value);
+        const { done, value } = await readerState.reader.read();
+        if (!done) {
+          if (!cleanedUp && !isDone()) c.enqueue(value);
+          return;
         }
-        if (cleanedUp2 || isStreamClosed2) return;
-        router.serverSsr?.setRenderFinished();
-        safeClose2();
-        cleanup2();
+        if (cleanedUp || isDone()) return;
+        if (!finishSsrRendering()) return;
+        safeClose();
+        return cleanup(void 0, false);
       } catch (error) {
-        if (cleanedUp2) return;
+        if (cleanedUp) return;
         console.error("Error reading appStream:", error);
-        router.serverSsr?.setRenderFinished();
-        safeError2(error);
-        cleanup2();
+        if (state < MergeState.AppDone) try {
+          serverSsr?.setRenderFinished();
+        } catch {
+        }
+        safeError(error);
+        return cleanup(error);
       } finally {
-        reader.releaseLock();
+        if (cleanedUp || isDone()) readerState.release();
       }
-    })().catch((error) => {
-      if (cleanedUp2) return;
-      console.error("Error in stream transform:", error);
-      safeError2(error);
-      cleanup2();
-    });
-    return stream2;
-  }
+    },
+    cancel(reason) {
+      state = MergeState.Done;
+      return cleanup(reason);
+    }
+  });
+}
+function makeMainStream(serverSsr, appStream, opts) {
   let stopListeningToInjectedHtml;
   let stopListeningToSerializationFinished;
   let serializationTimeoutHandle;
   let lifetimeTimeoutHandle;
   let cleanedUp = false;
   let controller;
-  let isStreamClosed = false;
-  const textDecoder = new TextDecoder();
-  let pendingRouterHtml = initialBufferedHtml ?? "";
-  let leftover = "";
-  let pendingClosingTags = "";
-  const MAX_LEFTOVER_CHARS = 2048;
-  let isAppRendering = true;
-  let streamBarrierLifted = false;
-  let serializationFinished = serializationAlreadyFinished;
-  function safeEnqueue(chunk) {
-    if (isStreamClosed) return;
-    if (typeof chunk === "string") controller.enqueue(textEncoder.encode(chunk));
-    else controller.enqueue(chunk);
+  let closeWhenDrained = false;
+  let state = MergeState.ReadingBody;
+  const readerState = createReaderState(appStream);
+  const notifyAbort = createAbortNotifier(opts);
+  const pendingWrites = [];
+  let pendingWriteHead = 0;
+  let pendingWriteChars = 0;
+  function clearPending() {
+    pendingWrites.length = 0;
+    pendingWriteHead = 0;
+    pendingWriteChars = 0;
+  }
+  let drainResolve = null;
+  const waitForDrain = () => new Promise((r) => {
+    drainResolve = r;
+  });
+  const signalDrain = () => {
+    if (drainResolve) {
+      const r = drainResolve;
+      drainResolve = null;
+      r();
+    }
+  };
+  const isDone = () => state === MergeState.Done;
+  function drainPending() {
+    if (!controller || isDone()) return;
+    while (pendingWriteHead < pendingWrites.length) {
+      const ds = controller.desiredSize;
+      if (ds !== null && ds <= 0) return;
+      const next = pendingWrites[pendingWriteHead];
+      pendingWrites[pendingWriteHead] = "";
+      pendingWriteHead++;
+      pendingWriteChars -= next.length;
+      try {
+        controller.enqueue(textEncoder.encode(next));
+      } catch (error) {
+        safeError(error);
+        cleanup(error);
+        return;
+      }
+    }
+    if (pendingWriteHead >= pendingWrites.length) {
+      pendingWrites.length = 0;
+      pendingWriteHead = 0;
+    }
+    if (closeWhenDrained && pendingWriteHead >= pendingWrites.length) {
+      closeWhenDrained = false;
+      safeClose();
+      cleanup(void 0, false);
+    }
+  }
+  function writeChunk(chunk) {
+    if (cleanedUp || isDone()) return;
+    if (!chunk.length) return;
+    if (pendingWriteChars + chunk.length > MAX_PENDING_WRITE_CHARS) {
+      const err = /* @__PURE__ */ new Error("SSR stream pending output exceeded maximum buffer");
+      safeError(err);
+      cleanup(err);
+      return;
+    }
+    pendingWrites.push(chunk);
+    pendingWriteChars += chunk.length;
+    drainPending();
   }
   function safeClose() {
-    if (isStreamClosed) return;
-    isStreamClosed = true;
+    if (isDone()) return;
+    state = MergeState.Done;
     try {
-      controller.close();
+      controller?.close();
     } catch {
     }
   }
   function safeError(error) {
-    if (isStreamClosed) return;
-    isStreamClosed = true;
+    if (isDone()) return;
+    state = MergeState.Done;
     try {
-      controller.error(error);
+      controller?.error(error);
     } catch {
     }
   }
-  function cleanup() {
-    if (cleanedUp) return;
+  function cleanup(reason, cancelReader = true) {
+    if (cleanedUp) return resolvedPromise;
     cleanedUp = true;
     try {
       stopListeningToInjectedHtml?.();
@@ -4143,144 +4413,253 @@ function transformStreamWithRouter(router, appStream, opts) {
       clearTimeout(lifetimeTimeoutHandle);
       lifetimeTimeoutHandle = void 0;
     }
-    pendingRouterHtml = "";
+    clearPendingRouterHtml();
     leftover = "";
-    pendingClosingTags = "";
-    router.serverSsr?.cleanup();
+    pendingTail = "";
+    clearPending();
+    if (cancelReader) notifyAbort(reason);
+    const readerDone = cancelReader ? readerState.cancel(reason) : (readerState.release(), resolvedPromise);
+    signalDrain();
+    try {
+      serverSsr.cleanup();
+    } catch (error) {
+      console.error("Error in SSR cleanup:", error);
+    }
+    return readerDone;
+  }
+  const textDecoder = new TextDecoder();
+  const pendingRouterHtml = [];
+  let pendingRouterHtmlChars = 0;
+  let leftover = "";
+  let pendingTail = "";
+  let streamBarrierLifted = false;
+  let streamBarrierMarkerSeen = false;
+  let serializationFinished = false;
+  function noteBarrierMarker(chunk) {
+    if (streamBarrierMarkerSeen) return;
+    if (chunk.includes("$tsr-stream-barrier")) streamBarrierMarkerSeen = true;
+  }
+  function liftBarrierAfterBoundary() {
+    if (streamBarrierLifted) return;
+    if (!streamBarrierMarkerSeen) return;
+    streamBarrierLifted = true;
+    serverSsr.liftScriptBarrier();
   }
   const stream = new ReadableStream$1({
     start(c) {
       controller = c;
+      drainPending();
     },
-    cancel() {
-      isStreamClosed = true;
-      cleanup();
+    pull() {
+      drainPending();
+      signalDrain();
+    },
+    cancel(reason) {
+      state = MergeState.Done;
+      return cleanup(reason);
     }
   });
-  function flushPendingRouterHtml() {
-    if (!pendingRouterHtml) return;
-    safeEnqueue(pendingRouterHtml);
-    pendingRouterHtml = "";
-  }
-  function appendRouterHtml(html) {
+  function drainRouterHtml() {
+    if (cleanedUp || isDone()) return;
+    let html;
+    try {
+      html = serverSsr.takeBufferedHtml();
+    } catch (error) {
+      safeError(error);
+      cleanup(error);
+      return;
+    }
     if (!html) return;
-    pendingRouterHtml += html;
+    if (state >= MergeState.Draining) {
+      const err = /* @__PURE__ */ new Error("SSR router HTML injected after stream finalization");
+      safeError(err);
+      cleanup(err);
+      return;
+    }
+    if (state === MergeState.HoldingTail) {
+      flushPendingRouterHtml();
+      writeChunk(html);
+    } else {
+      if (pendingRouterHtmlChars + html.length > MAX_ROUTER_HTML_CHARS) {
+        const err = /* @__PURE__ */ new Error("SSR router HTML exceeded maximum buffer");
+        safeError(err);
+        cleanup(err);
+        return;
+      }
+      pendingRouterHtml.push(html);
+      pendingRouterHtmlChars += html.length;
+    }
+  }
+  function flushPendingRouterHtml() {
+    if (!pendingRouterHtml.length) return;
+    for (const html of pendingRouterHtml) writeChunk(html);
+    clearPendingRouterHtml();
+  }
+  function clearPendingRouterHtml() {
+    pendingRouterHtml.length = 0;
+    pendingRouterHtmlChars = 0;
+  }
+  function appendTail(chunk) {
+    pendingTail += chunk;
+    if (pendingTail.length > MAX_TAIL_CHARS) throw new Error("SSR stream tail exceeded maximum buffer");
+  }
+  function waitForBackpressure() {
+    return !!(controller && controller.desiredSize !== null && controller.desiredSize <= 0);
+  }
+  function startSerializationTimeout() {
+    if (cleanedUp || isDone()) return;
+    if (serializationTimeoutHandle !== void 0) return;
+    const timeoutMs2 = opts?.timeoutMs ?? DEFAULT_SERIALIZATION_TIMEOUT_MS;
+    serializationTimeoutHandle = setTimeout(() => {
+      if (!cleanedUp && !isDone()) {
+        const err = /* @__PURE__ */ new Error("Serialization timeout after app render finished");
+        console.error("Serialization timeout after app render finished");
+        safeError(err);
+        cleanup(err);
+      }
+    }, timeoutMs2);
   }
   function tryFinish() {
-    if (isAppRendering || !serializationFinished) return;
-    if (cleanedUp || isStreamClosed) return;
+    if (state !== MergeState.AppDone || !serializationFinished) return;
+    if (cleanedUp || isDone()) return;
     if (serializationTimeoutHandle !== void 0) {
       clearTimeout(serializationTimeoutHandle);
       serializationTimeoutHandle = void 0;
     }
+    drainRouterHtml();
+    if (cleanedUp || isDone()) return;
     const decoderRemainder = textDecoder.decode();
-    if (leftover) safeEnqueue(leftover);
-    if (decoderRemainder) safeEnqueue(decoderRemainder);
+    if (leftover) writeChunk(leftover);
+    if (cleanedUp || isDone()) return;
+    if (decoderRemainder) writeChunk(decoderRemainder);
+    if (cleanedUp || isDone()) return;
     flushPendingRouterHtml();
-    if (pendingClosingTags) safeEnqueue(pendingClosingTags);
-    safeClose();
-    cleanup();
+    if (cleanedUp || isDone()) return;
+    if (pendingTail) writeChunk(pendingTail);
+    if (cleanedUp || isDone()) return;
+    leftover = "";
+    pendingTail = "";
+    state = MergeState.Draining;
+    closeWhenDrained = true;
+    drainPending();
   }
-  const lifetimeMs = DEFAULT_LIFETIME_TIMEOUT_MS;
+  function finishAppRendering() {
+    if (state >= MergeState.AppDone) return;
+    state = MergeState.AppDone;
+    try {
+      serverSsr.setRenderFinished();
+    } catch (error) {
+      safeError(error);
+      cleanup(error);
+      return;
+    }
+    drainRouterHtml();
+    if (cleanedUp || isDone()) return;
+    serializationFinished = serializationFinished || serverSsr.isSerializationFinished();
+    if (serializationFinished) tryFinish();
+    else startSerializationTimeout();
+  }
+  const timeoutMs = opts?.timeoutMs ?? DEFAULT_SERIALIZATION_TIMEOUT_MS;
+  const lifetimeMs = opts?.lifetimeMs ?? timeoutMs * 2;
   lifetimeTimeoutHandle = setTimeout(() => {
-    if (!cleanedUp && !isStreamClosed) {
+    if (!cleanedUp && !isDone()) {
+      const err = /* @__PURE__ */ new Error("Stream lifetime exceeded");
       console.warn(`SSR stream transform exceeded maximum lifetime (${lifetimeMs}ms), forcing cleanup`);
-      safeError(/* @__PURE__ */ new Error("Stream lifetime exceeded"));
-      cleanup();
+      safeError(err);
+      cleanup(err);
     }
   }, lifetimeMs);
-  if (!serializationAlreadyFinished) {
-    stopListeningToInjectedHtml = router.subscribe("onInjectedHtml", () => {
-      if (cleanedUp || isStreamClosed) return;
-      const html = router.serverSsr?.takeBufferedHtml();
-      if (!html) return;
-      if (isAppRendering || leftover || pendingClosingTags) appendRouterHtml(html);
-      else {
-        flushPendingRouterHtml();
-        safeEnqueue(html);
-      }
-    });
-    stopListeningToSerializationFinished = router.subscribe("onSerializationFinished", () => {
-      serializationFinished = true;
-      tryFinish();
-    });
+  stopListeningToInjectedHtml = serverSsr.onInjectedHtml(() => {
+    drainRouterHtml();
+  });
+  stopListeningToSerializationFinished = serverSsr.onSerializationFinished(() => {
+    serializationFinished = true;
+    drainRouterHtml();
+    tryFinish();
+  });
+  drainRouterHtml();
+  if (cleanedUp || isDone()) return stream;
+  serializationFinished = serializationFinished || serverSsr.isSerializationFinished();
+  if (serializationFinished) {
+    drainRouterHtml();
+    if (cleanedUp || isDone()) return stream;
   }
   (async () => {
-    const reader = appStream.getReader();
     try {
       while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        if (cleanedUp || isStreamClosed) return;
-        const text = value instanceof Uint8Array ? textDecoder.decode(value, { stream: true }) : String(value);
-        const chunkString = leftover ? leftover + text : text;
-        if (!streamBarrierLifted) {
-          if (chunkString.includes("$tsr-stream-barrier")) {
-            streamBarrierLifted = true;
-            router.serverSsr?.liftScriptBarrier();
-          }
+        if (waitForBackpressure()) {
+          await waitForDrain();
+          if (cleanedUp || isDone()) return;
         }
-        if (pendingClosingTags) {
-          pendingClosingTags += chunkString;
+        const { done, value } = await readerState.reader.read();
+        if (done) break;
+        if (cleanedUp || isDone()) return;
+        const text = typeof value === "string" ? value : textDecoder.decode(value, { stream: true });
+        const chunkString = leftover ? leftover + text : text;
+        if (state >= MergeState.HoldingTail) {
+          appendTail(chunkString);
           leftover = "";
           continue;
         }
-        const bodyEndIndex = chunkString.indexOf(BODY_END_TAG);
-        const htmlEndIndex = chunkString.indexOf(HTML_END_TAG);
-        if (bodyEndIndex !== -1 && htmlEndIndex !== -1 && bodyEndIndex < htmlEndIndex) {
-          pendingClosingTags = chunkString.slice(bodyEndIndex);
-          safeEnqueue(chunkString.slice(0, bodyEndIndex));
+        const boundary = findHtmlBoundary(chunkString);
+        if (boundary < -1) {
+          const bodyEndIndex = -boundary - 2;
+          state = MergeState.HoldingTail;
+          appendTail(chunkString.slice(bodyEndIndex));
+          const bodyChunk = chunkString.slice(0, bodyEndIndex);
+          writeChunk(bodyChunk);
+          if (cleanedUp || isDone()) return;
+          noteBarrierMarker(bodyChunk);
+          liftBarrierAfterBoundary();
+          if (cleanedUp || isDone()) return;
           flushPendingRouterHtml();
           leftover = "";
           continue;
         }
-        const lastClosingTagEnd = findLastClosingTagEnd(chunkString);
+        const lastClosingTagEnd = boundary;
         if (lastClosingTagEnd > 0) {
-          safeEnqueue(chunkString.slice(0, lastClosingTagEnd));
+          const safeChunk = chunkString.slice(0, lastClosingTagEnd);
+          writeChunk(safeChunk);
+          if (cleanedUp || isDone()) return;
+          noteBarrierMarker(safeChunk);
+          liftBarrierAfterBoundary();
+          if (cleanedUp || isDone()) return;
           flushPendingRouterHtml();
           leftover = chunkString.slice(lastClosingTagEnd);
           if (leftover.length > MAX_LEFTOVER_CHARS) {
-            safeEnqueue(leftover.slice(0, leftover.length - MAX_LEFTOVER_CHARS));
-            leftover = leftover.slice(-MAX_LEFTOVER_CHARS);
+            noteBarrierMarker(leftover);
+            writeChunk(leftover.slice(0, leftover.length - MAX_LEFTOVER_CHARS));
+            leftover = leftover.slice(-2048);
           }
         } else {
           const combined = chunkString;
           if (combined.length > MAX_LEFTOVER_CHARS) {
+            noteBarrierMarker(combined);
             const flushUpto = combined.length - MAX_LEFTOVER_CHARS;
-            safeEnqueue(combined.slice(0, flushUpto));
+            writeChunk(combined.slice(0, flushUpto));
             leftover = combined.slice(flushUpto);
           } else leftover = combined;
         }
       }
-      if (cleanedUp || isStreamClosed) return;
-      isAppRendering = false;
-      router.serverSsr?.setRenderFinished();
-      if (serializationFinished) tryFinish();
-      else {
-        const timeoutMs = opts?.timeoutMs ?? DEFAULT_SERIALIZATION_TIMEOUT_MS;
-        serializationTimeoutHandle = setTimeout(() => {
-          if (!cleanedUp && !isStreamClosed) {
-            console.error("Serialization timeout after app render finished");
-            safeError(/* @__PURE__ */ new Error("Serialization timeout after app render finished"));
-            cleanup();
-          }
-        }, timeoutMs);
-      }
+      if (cleanedUp || isDone()) return;
+      finishAppRendering();
     } catch (error) {
       if (cleanedUp) return;
       console.error("Error reading appStream:", error);
-      isAppRendering = false;
-      router.serverSsr?.setRenderFinished();
+      if (state < MergeState.AppDone) try {
+        serverSsr.setRenderFinished();
+      } catch {
+      }
       safeError(error);
-      cleanup();
+      cleanup(error);
     } finally {
-      reader.releaseLock();
+      readerState.release();
     }
   })().catch((error) => {
     if (cleanedUp) return;
     console.error("Error in stream transform:", error);
     safeError(error);
-    cleanup();
+    cleanup(error);
   });
   return stream;
 }
@@ -4304,15 +4683,19 @@ export {
   BaseRootRoute as B,
   isResolvedRedirect as C,
   isServer as D,
-  makeSerovalPlugin as E,
-  mergeHeaders as F,
-  parseRedirect as G,
-  removeTrailingSlash as H,
-  resolveManifestAssetLink as I,
-  resolveManifestCssLink as J,
-  rootRouteId as K,
-  transformPipeableStreamWithRouter as L,
-  transformReadableStreamWithRouter as M,
+  isSsrResponse as E,
+  makeSerovalPlugin as F,
+  mergeHeaders as G,
+  normalizeSsrResponse as H,
+  parseRedirect as I,
+  removeTrailingSlash as J,
+  replaceSsrResponse as K,
+  resolveManifestAssetLink as L,
+  resolveManifestCssLink as M,
+  rootRouteId as N,
+  stripSsrResponseBody as O,
+  transformPipeableStreamWithRouter as P,
+  transformReadableStreamWithRouter as Q,
   RouterCore as R,
   BaseRoute as a,
   appendUniqueUserTags as b,
@@ -4321,15 +4704,15 @@ export {
   createNonReactiveReadonlyStore as e,
   createRawStreamRPCPlugin as f,
   createSerializationAdapter as g,
-  deepEqual as h,
-  defaultSerovalPlugins as i,
-  defineHandlerCallback as j,
-  escapeHtml as k,
-  exactPathTest as l,
-  executeRewriteInput as m,
-  functionalUpdate as n,
-  getAssetCrossOrigin as o,
-  getManifestScriptFormat as p,
+  createSsrStreamResponse as h,
+  deepEqual as i,
+  defaultSerovalPlugins as j,
+  defineHandlerCallback as k,
+  escapeHtml as l,
+  exactPathTest as m,
+  executeRewriteInput as n,
+  functionalUpdate as o,
+  getAssetCrossOrigin as p,
   getNormalizedURL as q,
   getOrigin as r,
   getScriptPreloadAttrs as s,

@@ -20,7 +20,7 @@ function serializeError(error: unknown) {
 }
 
 function logSsrError(request: Request, error: unknown, detail?: Record<string, unknown>) {
-  console.error("SSR ERROR:", serializeError(error));
+  console.error("SSR runtime error:", serializeError(error));
   console.error("[SSR] Request failed", {
     method: request.method,
     url: request.url,

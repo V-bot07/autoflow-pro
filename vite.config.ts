@@ -6,9 +6,24 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
+const ssrInlineDependencies = ["tslib", "@supabase/supabase-js", "@supabase/auth-js"];
+
 export default defineConfig({
+  vite: {
+    ssr: {
+      noExternal: ssrInlineDependencies,
+    },
+    environments: {
+      ssr: {
+        resolve: {
+          noExternal: ssrInlineDependencies,
+        },
+      },
+    },
+  },
   nitro: {
     preset: "vercel",
+    noExternals: ssrInlineDependencies,
     vercel: {
       functions: {
         runtime: "nodejs20.x",

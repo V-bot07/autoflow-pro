@@ -11,6 +11,18 @@ function getServerEnv(name: string) {
   return typeof process !== 'undefined' ? process.env[name] : undefined;
 }
 
+function cleanEnvValue(value: string | undefined) {
+  const trimmed = value?.trim();
+  if (!trimmed) return undefined;
+
+  const quote = trimmed[0];
+  if ((quote === '"' || quote === "'") && trimmed.endsWith(quote)) {
+    return trimmed.slice(1, -1).trim();
+  }
+
+  return trimmed;
+}
+
 function createDisabledSupabaseClient(message: string) {
   const result = Promise.resolve({ data: null, error: new Error(message) });
 
@@ -53,14 +65,16 @@ function createDisabledSupabaseClient(message: string) {
 function createSupabaseClient() {
   // Use import.meta.env for the browser bundle. Fall back to process.env only
   // during SSR, where Vercel runtime variables are available per request.
-  const SUPABASE_URL =
+  const SUPABASE_URL = cleanEnvValue(
     import.meta.env.VITE_SUPABASE_URL ||
     getServerEnv('VITE_SUPABASE_URL') ||
-    getServerEnv('SUPABASE_URL');
-  const SUPABASE_PUBLISHABLE_KEY =
+    getServerEnv('SUPABASE_URL'),
+  );
+  const SUPABASE_PUBLISHABLE_KEY = cleanEnvValue(
     import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
     getServerEnv('VITE_SUPABASE_PUBLISHABLE_KEY') ||
-    getServerEnv('SUPABASE_PUBLISHABLE_KEY');
+    getServerEnv('SUPABASE_PUBLISHABLE_KEY'),
+  );
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     const missing = [
@@ -80,13 +94,19 @@ function createSupabaseClient() {
     return createDisabledSupabaseClient(message);
   }
 
-  return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-    auth: {
-      storage: typeof window !== 'undefined' ? localStorage : undefined,
-      persistSession: true,
-      autoRefreshToken: true,
-    }
-  });
+  try {
+    return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+      auth: {
+        storage: typeof window !== 'undefined' ? localStorage : undefined,
+        persistSession: true,
+        autoRefreshToken: true,
+      },
+    });
+  } catch (error) {
+    console.error('[Supabase] Client initialization failed', error);
+    const message = error instanceof Error ? error.message : 'Supabase client initialization failed.';
+    return createDisabledSupabaseClient(message);
+  }
 }
 
 let _supabase: ReturnType<typeof createSupabaseClient> | undefined;

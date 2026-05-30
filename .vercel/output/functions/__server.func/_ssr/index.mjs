@@ -2,7 +2,7 @@ let lastCapturedError;
 const TTL_MS = 5e3;
 function record(error) {
   lastCapturedError = { error, at: Date.now() };
-  console.error("SSR ERROR:", error);
+  console.error("SSR runtime error:", error);
 }
 if (typeof globalThis.addEventListener === "function") {
   globalThis.addEventListener("error", (event) => record(event.error ?? event));
@@ -67,7 +67,7 @@ function serializeError(error) {
   return error;
 }
 function logSsrError(request, error, detail) {
-  console.error("SSR ERROR:", serializeError(error));
+  console.error("SSR runtime error:", serializeError(error));
   console.error("[SSR] Request failed", {
     method: request.method,
     url: request.url,
@@ -78,7 +78,7 @@ function logSsrError(request, error, detail) {
 let serverEntryPromise;
 async function getServerEntry() {
   if (!serverEntryPromise) {
-    serverEntryPromise = import("./server-CHbAJjby.mjs").then((n) => n.s).then(
+    serverEntryPromise = import("./server-BrqBcIN5.mjs").then((n) => n.s).then(
       (m) => m.default ?? m
     );
   }

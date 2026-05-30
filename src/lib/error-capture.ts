@@ -6,7 +6,7 @@ const TTL_MS = 5_000;
 
 function record(error: unknown) {
   lastCapturedError = { error, at: Date.now() };
-  console.error("SSR ERROR:", error);
+  console.error("SSR runtime error:", error);
 }
 
 if (typeof globalThis.addEventListener === "function") {

@@ -1,5 +1,5 @@
 import { r as reactExports, j as jsxRuntimeExports, R as React } from "./react.mjs";
-import { w as invariant, x as isDangerousProtocol, l as exactPathTest, H as removeTrailingSlash, v as hasKeys, h as deepEqual, n as functionalUpdate, B as BaseRootRoute, a as BaseRoute, y as isModuleNotFoundError, z as isNotFound, t as getScrollRestorationScriptForRouter, K as rootRouteId, D as isServer, A as isRedirect, e as createNonReactiveReadonlyStore, d as createNonReactiveMutableStore, R as RouterCore, k as escapeHtml, o as getAssetCrossOrigin, s as getScriptPreloadAttrs, b as appendUniqueUserTags, J as resolveManifestCssLink, M as transformReadableStreamWithRouter, L as transformPipeableStreamWithRouter } from "./tanstack__router-core.mjs";
+import { w as invariant, x as isDangerousProtocol, m as exactPathTest, J as removeTrailingSlash, v as hasKeys, i as deepEqual, o as functionalUpdate, B as BaseRootRoute, a as BaseRoute, y as isModuleNotFoundError, z as isNotFound, t as getScrollRestorationScriptForRouter, N as rootRouteId, D as isServer, A as isRedirect, e as createNonReactiveReadonlyStore, d as createNonReactiveMutableStore, R as RouterCore, l as escapeHtml, p as getAssetCrossOrigin, s as getScriptPreloadAttrs, b as appendUniqueUserTags, M as resolveManifestCssLink, Q as transformReadableStreamWithRouter, h as createSsrStreamResponse, P as transformPipeableStreamWithRouter } from "./tanstack__router-core.mjs";
 import { a as ReactDOMServer } from "./react-dom.mjs";
 import { PassThrough } from "node:stream";
 import { i as isbot } from "./isbot.mjs";
@@ -1066,6 +1066,21 @@ function renderScripts(router, scripts, assetScripts) {
     key: `tsr-scripts-${asset.tag}-${i}`
   })) });
 }
+var noop = () => {
+};
+async function waitForReadyOrAbort(ready, signal) {
+  let cleanup = noop;
+  try {
+    await Promise.race([ready, new Promise((resolve) => {
+      const onAbort = () => resolve();
+      cleanup = () => signal.removeEventListener("abort", onAbort);
+      signal.addEventListener("abort", onAbort, { once: true });
+      if (signal.aborted) resolve();
+    })]);
+  } finally {
+    cleanup();
+  }
+}
 var renderRouterToStream = async ({ request, router, responseHeaders, children }) => {
   if (typeof ReactDOMServer.renderToReadableStream === "function") {
     const stream = await ReactDOMServer.renderToReadableStream(children, {
@@ -1073,17 +1088,50 @@ var renderRouterToStream = async ({ request, router, responseHeaders, children }
       nonce: router.options.ssr?.nonce,
       progressiveChunkSize: Number.POSITIVE_INFINITY
     });
-    if (isbot(request.headers.get("User-Agent"))) await stream.allReady;
-    const responseStream = transformReadableStreamWithRouter(router, stream);
-    return new Response(responseStream, {
+    if (isbot(request.headers.get("User-Agent"))) await waitForReadyOrAbort(stream.allReady, request.signal);
+    const responseStream = transformReadableStreamWithRouter(router, stream, { onAbort: () => stream.cancel().catch(() => {
+    }) });
+    return createSsrStreamResponse(router, new Response(responseStream, {
       status: router.stores.statusCode.get(),
       headers: responseHeaders
-    });
+    }));
   }
   if (typeof ReactDOMServer.renderToPipeableStream === "function") {
     const reactAppPassthrough = new PassThrough();
+    let pipeable;
+    let responseAttached = false;
+    let aborted = false;
+    let endedBeforeAttach = false;
+    let pendingAbortReason;
+    const toError = (reason) => reason instanceof Error ? reason : new Error(String(reason ?? "SSR aborted"));
+    const destroyError = (reason) => reason === void 0 ? void 0 : toError(reason);
+    const pendingDestroyError = () => pendingAbortReason === void 0 ? toError(pendingAbortReason) : destroyError(pendingAbortReason);
+    const finishPassThrough = (reason, opts) => {
+      if (reactAppPassthrough.destroyed) return;
+      if (responseAttached) reactAppPassthrough.destroy(opts?.defaultError ? toError(reason) : destroyError(reason));
+      else endedBeforeAttach = true;
+    };
+    const abortPipeable = (reason, opts) => {
+      if (aborted) return;
+      aborted = true;
+      pendingAbortReason = reason;
+      const err = toError(reason);
+      try {
+        pipeable?.abort(err);
+      } catch {
+      }
+      finishPassThrough(reason, opts);
+    };
+    if (request.signal.aborted) abortPipeable(request.signal.reason);
+    else {
+      const onRequestAbort = () => abortPipeable(request.signal.reason);
+      request.signal.addEventListener("abort", onRequestAbort, { once: true });
+      router.serverSsr?.onCleanup(() => {
+        request.signal.removeEventListener("abort", onRequestAbort);
+      });
+    }
     try {
-      const pipeable = ReactDOMServer.renderToPipeableStream(children, {
+      pipeable = ReactDOMServer.renderToPipeableStream(children, {
         nonce: router.options.ssr?.nonce,
         progressiveChunkSize: Number.POSITIVE_INFINITY,
         ...isbot(request.headers.get("User-Agent")) ? { onAllReady() {
@@ -1093,18 +1141,25 @@ var renderRouterToStream = async ({ request, router, responseHeaders, children }
         } },
         onError: (error, info) => {
           console.error("Error in renderToPipeableStream:", error, info);
-          if (!reactAppPassthrough.destroyed) reactAppPassthrough.destroy(error instanceof Error ? error : new Error(String(error)));
+          abortPipeable(error, { defaultError: true });
         }
       });
     } catch (e) {
       console.error("Error in renderToPipeableStream:", e);
-      reactAppPassthrough.destroy(e instanceof Error ? e : new Error(String(e)));
+      router.serverSsr?.cleanup();
+      throw e;
     }
-    const responseStream = transformPipeableStreamWithRouter(router, reactAppPassthrough);
-    return new Response(responseStream, {
+    const responseStream = transformPipeableStreamWithRouter(router, reactAppPassthrough, { onAbort: abortPipeable });
+    responseAttached = true;
+    if (endedBeforeAttach) reactAppPassthrough.destroy(pendingDestroyError());
+    if (aborted && pipeable) try {
+      pipeable.abort(toError(pendingAbortReason));
+    } catch {
+    }
+    return createSsrStreamResponse(router, new Response(responseStream, {
       status: router.stores.statusCode.get(),
       headers: responseHeaders
-    });
+    }));
   }
   throw new Error("No renderToReadableStream or renderToPipeableStream found in react-dom/server. Ensure you are using a version of react-dom that supports streaming.");
 };
